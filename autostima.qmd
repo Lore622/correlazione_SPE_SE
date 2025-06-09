@@ -72,9 +72,11 @@ df_SE_iat_rrt_wide$SE_RRT_merged <- ifelse(
   df_SE_iat_rrt_wide$SE_RRT
 )
 
-# T-test su SE implicita
-
-t.test(df_SE_iat_rrt_wide$SE_IAT)
+# test su SE implicita:vediamo se si distribuiscono normalmente
+shapiro.test(df_SE_iat_rrt_wide$SE_IAT)
+shapiro.test(df_SE_iat_rrt_wide$SE_RRT_merged)
+#SE_RRT_merged si distribuisce normalmente, SE_IAT no
+wilcox.test(df_SE_iat_rrt_wide$SE_IAT)
 t.test(df_SE_iat_rrt_wide$SE_RRT_merged)
 ```
 
@@ -112,7 +114,7 @@ for (i in seq_along(partecipanti)) {
   }
 }
 df_se_nlt <- data.frame(participant_id = partecipanti, SE_NLT = round(se_nlt, 2))
-t.test(df_se_nlt$SE_NLT)
+
 
 item_negativi <- c(
   "Sono portato a pensare di essere un vero fallimento",
@@ -142,18 +144,22 @@ df_all <- merge(RT_mean_tot[, c("participant_id", "SPE")], df_SE_iat_rrt_wide[, 
 df_all <- merge(df_all, df_se_nlt, by = "participant_id")
 df_all <- merge(df_all, df_rses_total, by = "participant_id")
 
-cor.test(df_all$SPE, df_all$SE_IAT)
-cor.test(df_all$SPE, df_all$SE_RRT_merged)
-cor.test(df_all$SPE, df_all$SE_NLT)
-cor.test(df_all$SPE, df_all$RSES_total)
 
-cor.test(df_all$RSES_total, df_all$SE_IAT)
-cor.test(df_all$RSES_total, df_all$SE_RRT_merged)
-cor.test(df_all$RSES_total, df_all$SE_NLT)
+# Correlazioni con SPE (non normale → tutte Spearman)
+cor.test(df_all$SPE, df_all$SE_IAT, method = "spearman")  
+cor.test(df_all$SPE, df_all$SE_RRT_merged, method = "spearman")  
+cor.test(df_all$SPE, df_all$SE_NLT, method = "spearman")  
+cor.test(df_all$SPE, df_all$RSES_total, method = "spearman")  
 
-cor.test(df_all$SE_RRT_merged, df_all$SE_IAT)
-cor.test(df_all$SE_NLT, df_all$SE_RRT_merged)
-cor.test(df_all$SE_IAT, df_all$SE_NLT)
+# Correlazioni con RSES_total (normale)
+cor.test(df_all$RSES_total, df_all$SE_IAT, method = "spearman")  
+cor.test(df_all$RSES_total, df_all$SE_RRT_merged, method = "pearson")  
+cor.test(df_all$RSES_total, df_all$SE_NLT, method = "pearson")  
+
+# Correlazioni tra misure implicite
+cor.test(df_all$SE_RRT_merged, df_all$SE_IAT, method = "spearman")  
+cor.test(df_all$SE_NLT, df_all$SE_RRT_merged, method = "pearson")  
+cor.test(df_all$SE_IAT, df_all$SE_NLT, method = "spearman")  
 ```
 
 ---

@@ -394,23 +394,34 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>  df_SE_iat_rrt_wide<span class="sc">$</span>SE_RRT</span>
 <span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="co"># T-test su SE implicita</span></span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="fu">t.test</span>(df_SE_iat_rrt_wide<span class="sc">$</span>SE_IAT)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="co"># test su SE implicita:vediamo se si distribuiscono normalmente</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="fu">shapiro.test</span>(df_SE_iat_rrt_wide<span class="sc">$</span>SE_IAT)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-    One Sample t-test
+    Shapiro-Wilk normality test
 
 data:  df_SE_iat_rrt_wide$SE_IAT
-t = -9.3475, df = 30, p-value = 2.15e-10
-alternative hypothesis: true mean is not equal to 0
-95 percent confidence interval:
- -0.2064197 -0.1323947
-sample estimates:
- mean of x 
--0.1694072 </code></pre>
+W = 0.90999, p-value = 0.01292</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">t.test</span>(df_SE_iat_rrt_wide<span class="sc">$</span>SE_RRT_merged)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">shapiro.test</span>(df_SE_iat_rrt_wide<span class="sc">$</span>SE_RRT_merged)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Shapiro-Wilk normality test
+
+data:  df_SE_iat_rrt_wide$SE_RRT_merged
+W = 0.955, p-value = 0.2141</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co">#SE_RRT_merged si distribuisce normalmente, SE_IAT no</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">wilcox.test</span>(df_SE_iat_rrt_wide<span class="sc">$</span>SE_IAT)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Wilcoxon signed rank exact test
+
+data:  df_SE_iat_rrt_wide$SE_IAT
+V = 0, p-value = 9.313e-10
+alternative hypothesis: true location is not equal to 0</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">t.test</span>(df_SE_iat_rrt_wide<span class="sc">$</span>SE_RRT_merged)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
     One Sample t-test
@@ -430,69 +441,57 @@ mean of x
 <section id="calcolo-se_nlt-e-rses" class="level2">
 <h2 class="anchored" data-anchor-id="calcolo-se_nlt-e-rses">Calcolo SE_NLT e RSES</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Rimuoviamo colonne non rilevanti</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>df_NLT_RSES <span class="ot">&lt;-</span> df_NLT_RSES[, <span class="sc">!</span><span class="fu">names</span>(df_NLT_RSES) <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"block"</span>, <span class="st">"accuracy"</span>, <span class="st">"RT"</span>)]</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>partecipanti <span class="ot">&lt;-</span> <span class="fu">toupper</span>(<span class="fu">unique</span>(df_NLT_RSES<span class="sc">$</span>participant_id))</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>se_nlt <span class="ot">&lt;-</span> <span class="fu">numeric</span>(<span class="fu">length</span>(partecipanti))</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_along</span>(partecipanti)) {</span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  pid <span class="ot">&lt;-</span> partecipanti[i]</span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  sub_df <span class="ot">&lt;-</span> df_NLT_RSES[<span class="fu">toupper</span>(df_NLT_RSES<span class="sc">$</span>participant_id) <span class="sc">==</span> pid, ]</span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  iniziale_nome <span class="ot">&lt;-</span> <span class="fu">substr</span>(pid, <span class="dv">1</span>, <span class="dv">1</span>)</span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  iniziale_cognome <span class="ot">&lt;-</span> <span class="fu">substr</span>(pid, <span class="dv">3</span>, <span class="dv">3</span>)</span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>  lettere_presenti <span class="ot">&lt;-</span> <span class="fu">toupper</span>(sub_df<span class="sc">$</span>letter)</span>
-<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>  score_nome <span class="ot">&lt;-</span> sub_df<span class="sc">$</span>score[lettere_presenti <span class="sc">==</span> iniziale_nome]</span>
-<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>  score_cognome <span class="ot">&lt;-</span> sub_df<span class="sc">$</span>score[lettere_presenti <span class="sc">==</span> iniziale_cognome]</span>
-<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>  lettere_da_escludere <span class="ot">&lt;-</span> <span class="fu">unique</span>(<span class="fu">c</span>(iniziale_nome, iniziale_cognome))</span>
-<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>  media_altre <span class="ot">&lt;-</span> <span class="fu">mean</span>(sub_df<span class="sc">$</span>score[<span class="sc">!</span>(lettere_presenti <span class="sc">%in%</span> lettere_da_escludere)], <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">length</span>(score_nome) <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">&amp;&amp;</span> <span class="fu">length</span>(score_cognome) <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">&amp;&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(media_altre)) {</span>
-<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>    media_nome <span class="ot">&lt;-</span> <span class="fu">mean</span>(score_nome, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>    media_cognome <span class="ot">&lt;-</span> <span class="fu">mean</span>(score_cognome, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>    se_nlt[i] <span class="ot">&lt;-</span> ((media_nome <span class="sc">-</span> media_altre) <span class="sc">+</span> (media_cognome <span class="sc">-</span> media_altre)) <span class="sc">/</span> <span class="dv">2</span></span>
-<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
-<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>    <span class="fu">message</span>(<span class="fu">sprintf</span>(<span class="st">"⚠️ Valori mancanti per %s → nome: %s, cognome: %s"</span>, </span>
-<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>                    pid, <span class="fu">toString</span>(score_nome), <span class="fu">toString</span>(score_cognome)))</span>
-<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>    se_nlt[i] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
-<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a>df_se_nlt <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">participant_id =</span> partecipanti, <span class="at">SE_NLT =</span> <span class="fu">round</span>(se_nlt, <span class="dv">2</span>))</span>
-<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a><span class="fu">t.test</span>(df_se_nlt<span class="sc">$</span>SE_NLT)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>
-    One Sample t-test
-
-data:  df_se_nlt$SE_NLT
-t = 10.105, df = 30, p-value = 3.583e-11
-alternative hypothesis: true mean is not equal to 0
-95 percent confidence interval:
- 2.405285 3.623747
-sample estimates:
-mean of x 
- 3.014516 </code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>item_negativi <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Sono portato a pensare di essere un vero fallimento"</span>,</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Penso di non avere molto di cui essere fiero"</span>,</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Desidererei aver maggior rispetto di me stesso"</span>,</span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Senza dubbio a volte mi sento inutile"</span>,</span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">"A volte penso di essere un buono a nulla"</span></span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>df_NLT_RSES<span class="sc">$</span>score_corretto <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(</span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  df_NLT_RSES<span class="sc">$</span>item <span class="sc">%in%</span> item_negativi,</span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  <span class="dv">3</span> <span class="sc">-</span> df_NLT_RSES<span class="sc">$</span>score,</span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  df_NLT_RSES<span class="sc">$</span>score</span>
-<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>df_rses <span class="ot">&lt;-</span> df_NLT_RSES[df_NLT_RSES<span class="sc">$</span>task <span class="sc">==</span> <span class="st">"RSES"</span>, ]</span>
-<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>df_rses_total <span class="ot">&lt;-</span> <span class="fu">aggregate</span>(score_corretto <span class="sc">~</span> participant_id, <span class="at">data =</span> df_rses, sum)</span>
-<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(df_rses_total) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"participant_id"</span>, <span class="st">"RSES_total"</span>)</span>
-<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a><span class="fu">mean</span>(df_rses_total<span class="sc">$</span>RSES_total)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Rimuoviamo colonne non rilevanti</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>df_NLT_RSES <span class="ot">&lt;-</span> df_NLT_RSES[, <span class="sc">!</span><span class="fu">names</span>(df_NLT_RSES) <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"block"</span>, <span class="st">"accuracy"</span>, <span class="st">"RT"</span>)]</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>partecipanti <span class="ot">&lt;-</span> <span class="fu">toupper</span>(<span class="fu">unique</span>(df_NLT_RSES<span class="sc">$</span>participant_id))</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>se_nlt <span class="ot">&lt;-</span> <span class="fu">numeric</span>(<span class="fu">length</span>(partecipanti))</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_along</span>(partecipanti)) {</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  pid <span class="ot">&lt;-</span> partecipanti[i]</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>  sub_df <span class="ot">&lt;-</span> df_NLT_RSES[<span class="fu">toupper</span>(df_NLT_RSES<span class="sc">$</span>participant_id) <span class="sc">==</span> pid, ]</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>  iniziale_nome <span class="ot">&lt;-</span> <span class="fu">substr</span>(pid, <span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>  iniziale_cognome <span class="ot">&lt;-</span> <span class="fu">substr</span>(pid, <span class="dv">3</span>, <span class="dv">3</span>)</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>  lettere_presenti <span class="ot">&lt;-</span> <span class="fu">toupper</span>(sub_df<span class="sc">$</span>letter)</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>  score_nome <span class="ot">&lt;-</span> sub_df<span class="sc">$</span>score[lettere_presenti <span class="sc">==</span> iniziale_nome]</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>  score_cognome <span class="ot">&lt;-</span> sub_df<span class="sc">$</span>score[lettere_presenti <span class="sc">==</span> iniziale_cognome]</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>  lettere_da_escludere <span class="ot">&lt;-</span> <span class="fu">unique</span>(<span class="fu">c</span>(iniziale_nome, iniziale_cognome))</span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>  media_altre <span class="ot">&lt;-</span> <span class="fu">mean</span>(sub_df<span class="sc">$</span>score[<span class="sc">!</span>(lettere_presenti <span class="sc">%in%</span> lettere_da_escludere)], <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">length</span>(score_nome) <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">&amp;&amp;</span> <span class="fu">length</span>(score_cognome) <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">&amp;&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(media_altre)) {</span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>    media_nome <span class="ot">&lt;-</span> <span class="fu">mean</span>(score_nome, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>    media_cognome <span class="ot">&lt;-</span> <span class="fu">mean</span>(score_cognome, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>    se_nlt[i] <span class="ot">&lt;-</span> ((media_nome <span class="sc">-</span> media_altre) <span class="sc">+</span> (media_cognome <span class="sc">-</span> media_altre)) <span class="sc">/</span> <span class="dv">2</span></span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>    <span class="fu">message</span>(<span class="fu">sprintf</span>(<span class="st">"⚠️ Valori mancanti per %s → nome: %s, cognome: %s"</span>, </span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>                    pid, <span class="fu">toString</span>(score_nome), <span class="fu">toString</span>(score_cognome)))</span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a>    se_nlt[i] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
+<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a>df_se_nlt <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">participant_id =</span> partecipanti, <span class="at">SE_NLT =</span> <span class="fu">round</span>(se_nlt, <span class="dv">2</span>))</span>
+<span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-31"><a href="#cb14-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-32"><a href="#cb14-32" aria-hidden="true" tabindex="-1"></a>item_negativi <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb14-33"><a href="#cb14-33" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Sono portato a pensare di essere un vero fallimento"</span>,</span>
+<span id="cb14-34"><a href="#cb14-34" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Penso di non avere molto di cui essere fiero"</span>,</span>
+<span id="cb14-35"><a href="#cb14-35" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Desidererei aver maggior rispetto di me stesso"</span>,</span>
+<span id="cb14-36"><a href="#cb14-36" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Senza dubbio a volte mi sento inutile"</span>,</span>
+<span id="cb14-37"><a href="#cb14-37" aria-hidden="true" tabindex="-1"></a>  <span class="st">"A volte penso di essere un buono a nulla"</span></span>
+<span id="cb14-38"><a href="#cb14-38" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-39"><a href="#cb14-39" aria-hidden="true" tabindex="-1"></a>df_NLT_RSES<span class="sc">$</span>score_corretto <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(</span>
+<span id="cb14-40"><a href="#cb14-40" aria-hidden="true" tabindex="-1"></a>  df_NLT_RSES<span class="sc">$</span>item <span class="sc">%in%</span> item_negativi,</span>
+<span id="cb14-41"><a href="#cb14-41" aria-hidden="true" tabindex="-1"></a>  <span class="dv">3</span> <span class="sc">-</span> df_NLT_RSES<span class="sc">$</span>score,</span>
+<span id="cb14-42"><a href="#cb14-42" aria-hidden="true" tabindex="-1"></a>  df_NLT_RSES<span class="sc">$</span>score</span>
+<span id="cb14-43"><a href="#cb14-43" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-44"><a href="#cb14-44" aria-hidden="true" tabindex="-1"></a>df_rses <span class="ot">&lt;-</span> df_NLT_RSES[df_NLT_RSES<span class="sc">$</span>task <span class="sc">==</span> <span class="st">"RSES"</span>, ]</span>
+<span id="cb14-45"><a href="#cb14-45" aria-hidden="true" tabindex="-1"></a>df_rses_total <span class="ot">&lt;-</span> <span class="fu">aggregate</span>(score_corretto <span class="sc">~</span> participant_id, <span class="at">data =</span> df_rses, sum)</span>
+<span id="cb14-46"><a href="#cb14-46" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(df_rses_total) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"participant_id"</span>, <span class="st">"RSES_total"</span>)</span>
+<span id="cb14-47"><a href="#cb14-47" aria-hidden="true" tabindex="-1"></a><span class="fu">mean</span>(df_rses_total<span class="sc">$</span>RSES_total)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 20.3871</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sd</span>(df_rses_total<span class="sc">$</span>RSES_total)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sd</span>(df_rses_total<span class="sc">$</span>RSES_total)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 4.855769</code></pre>
 </div>
@@ -502,81 +501,82 @@ mean of x
 <section id="correlazioni-tra-spe-e-misure-di-autostima" class="level2">
 <h2 class="anchored" data-anchor-id="correlazioni-tra-spe-e-misure-di-autostima">Correlazioni tra SPE e misure di autostima</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>df_all <span class="ot">&lt;-</span> <span class="fu">merge</span>(RT_mean_tot[, <span class="fu">c</span>(<span class="st">"participant_id"</span>, <span class="st">"SPE"</span>)], df_SE_iat_rrt_wide[, <span class="fu">c</span>(<span class="st">"participant_id"</span>, <span class="st">"SE_IAT"</span>, <span class="st">"SE_RRT_merged"</span>)], <span class="at">by =</span> <span class="st">"participant_id"</span>)</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>df_all <span class="ot">&lt;-</span> <span class="fu">merge</span>(df_all, df_se_nlt, <span class="at">by =</span> <span class="st">"participant_id"</span>)</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>df_all <span class="ot">&lt;-</span> <span class="fu">merge</span>(df_all, df_rses_total, <span class="at">by =</span> <span class="st">"participant_id"</span>)</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cor.test</span>(df_all<span class="sc">$</span>SPE, df_all<span class="sc">$</span>SE_IAT)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>df_all <span class="ot">&lt;-</span> <span class="fu">merge</span>(RT_mean_tot[, <span class="fu">c</span>(<span class="st">"participant_id"</span>, <span class="st">"SPE"</span>)], df_SE_iat_rrt_wide[, <span class="fu">c</span>(<span class="st">"participant_id"</span>, <span class="st">"SE_IAT"</span>, <span class="st">"SE_RRT_merged"</span>)], <span class="at">by =</span> <span class="st">"participant_id"</span>)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>df_all <span class="ot">&lt;-</span> <span class="fu">merge</span>(df_all, df_se_nlt, <span class="at">by =</span> <span class="st">"participant_id"</span>)</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>df_all <span class="ot">&lt;-</span> <span class="fu">merge</span>(df_all, df_rses_total, <span class="at">by =</span> <span class="st">"participant_id"</span>)</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Correlazioni con SPE (non normale → tutte Spearman)</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="fu">cor.test</span>(df_all<span class="sc">$</span>SPE, df_all<span class="sc">$</span>SE_IAT, <span class="at">method =</span> <span class="st">"spearman"</span>)  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-    Pearson's product-moment correlation
+    Spearman's rank correlation rho
 
 data:  df_all$SPE and df_all$SE_IAT
-t = -0.12776, df = 27, p-value = 0.8993
-alternative hypothesis: true correlation is not equal to 0
-95 percent confidence interval:
- -0.3875947  0.3450332
+S = 4162, p-value = 0.8974
+alternative hypothesis: true rho is not equal to 0
 sample estimates:
-       cor 
--0.0245809 </code></pre>
+        rho 
+-0.02512315 </code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cor.test</span>(df_all<span class="sc">$</span>SPE, df_all<span class="sc">$</span>SE_RRT_merged)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cor.test</span>(df_all<span class="sc">$</span>SPE, df_all<span class="sc">$</span>SE_RRT_merged, <span class="at">method =</span> <span class="st">"spearman"</span>)  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-    Pearson's product-moment correlation
+    Spearman's rank correlation rho
 
 data:  df_all$SPE and df_all$SE_RRT_merged
-t = -0.11764, df = 27, p-value = 0.9072
-alternative hypothesis: true correlation is not equal to 0
-95 percent confidence interval:
- -0.3859377  0.3467486
+S = 4022, p-value = 0.9623
+alternative hypothesis: true rho is not equal to 0
 sample estimates:
-        cor 
--0.02263347 </code></pre>
+        rho 
+0.009359606 </code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cor.test</span>(df_all<span class="sc">$</span>SPE, df_all<span class="sc">$</span>SE_NLT)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cor.test</span>(df_all<span class="sc">$</span>SPE, df_all<span class="sc">$</span>SE_NLT, <span class="at">method =</span> <span class="st">"spearman"</span>)  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-    Pearson's product-moment correlation
+    Spearman's rank correlation rho
 
 data:  df_all$SPE and df_all$SE_NLT
-t = 0.85403, df = 27, p-value = 0.4006
-alternative hypothesis: true correlation is not equal to 0
-95 percent confidence interval:
- -0.2172367  0.4990250
+S = 3500, p-value = 0.4739
+alternative hypothesis: true rho is not equal to 0
 sample estimates:
-      cor 
-0.1621816 </code></pre>
+     rho 
+0.137931 </code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cor.test</span>(df_all<span class="sc">$</span>SPE, df_all<span class="sc">$</span>RSES_total)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cor.test</span>(df_all<span class="sc">$</span>SPE, df_all<span class="sc">$</span>RSES_total, <span class="at">method =</span> <span class="st">"spearman"</span>)  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in cor.test.default(df_all$SPE, df_all$RSES_total, method =
+"spearman"): Impossibile calcolare p-value esatti in presenza di ties</code></pre>
+</div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-    Pearson's product-moment correlation
+    Spearman's rank correlation rho
 
 data:  df_all$SPE and df_all$RSES_total
-t = -0.51688, df = 27, p-value = 0.6094
-alternative hypothesis: true correlation is not equal to 0
-95 percent confidence interval:
- -0.4491948  0.2775910
+S = 4639.9, p-value = 0.4598
+alternative hypothesis: true rho is not equal to 0
 sample estimates:
-        cor 
--0.09898533 </code></pre>
+       rho 
+-0.1428235 </code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cor.test</span>(df_all<span class="sc">$</span>RSES_total, df_all<span class="sc">$</span>SE_IAT)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Correlazioni con RSES_total (normale)</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cor.test</span>(df_all<span class="sc">$</span>RSES_total, df_all<span class="sc">$</span>SE_IAT, <span class="at">method =</span> <span class="st">"spearman"</span>)  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in cor.test.default(df_all$RSES_total, df_all$SE_IAT, method =
+"spearman"): Impossibile calcolare p-value esatti in presenza di ties</code></pre>
+</div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-    Pearson's product-moment correlation
+    Spearman's rank correlation rho
 
 data:  df_all$RSES_total and df_all$SE_IAT
-t = -1.0851, df = 27, p-value = 0.2875
-alternative hypothesis: true correlation is not equal to 0
-95 percent confidence interval:
- -0.5311325  0.1752129
+S = 4872, p-value = 0.2982
+alternative hypothesis: true rho is not equal to 0
 sample estimates:
-       cor 
--0.2044199 </code></pre>
+       rho 
+-0.2000025 </code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cor.test</span>(df_all<span class="sc">$</span>RSES_total, df_all<span class="sc">$</span>SE_RRT_merged)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cor.test</span>(df_all<span class="sc">$</span>RSES_total, df_all<span class="sc">$</span>SE_RRT_merged, <span class="at">method =</span> <span class="st">"pearson"</span>)  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
     Pearson's product-moment correlation
@@ -590,7 +590,7 @@ sample estimates:
       cor 
 0.2993424 </code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cor.test</span>(df_all<span class="sc">$</span>RSES_total, df_all<span class="sc">$</span>SE_NLT)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cor.test</span>(df_all<span class="sc">$</span>RSES_total, df_all<span class="sc">$</span>SE_NLT, <span class="at">method =</span> <span class="st">"pearson"</span>)  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
     Pearson's product-moment correlation
@@ -604,21 +604,20 @@ sample estimates:
        cor 
 0.05146481 </code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cor.test</span>(df_all<span class="sc">$</span>SE_RRT_merged, df_all<span class="sc">$</span>SE_IAT)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Correlazioni tra misure implicite</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cor.test</span>(df_all<span class="sc">$</span>SE_RRT_merged, df_all<span class="sc">$</span>SE_IAT, <span class="at">method =</span> <span class="st">"spearman"</span>)  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-    Pearson's product-moment correlation
+    Spearman's rank correlation rho
 
 data:  df_all$SE_RRT_merged and df_all$SE_IAT
-t = -1.3381, df = 27, p-value = 0.192
-alternative hypothesis: true correlation is not equal to 0
-95 percent confidence interval:
- -0.5643126  0.1289015
+S = 4618, p-value = 0.4755
+alternative hypothesis: true rho is not equal to 0
 sample estimates:
-       cor 
--0.2493859 </code></pre>
+       rho 
+-0.1374384 </code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cor.test</span>(df_all<span class="sc">$</span>SE_NLT, df_all<span class="sc">$</span>SE_RRT_merged)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cor.test</span>(df_all<span class="sc">$</span>SE_NLT, df_all<span class="sc">$</span>SE_RRT_merged, <span class="at">method =</span> <span class="st">"pearson"</span>)  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
     Pearson's product-moment correlation
@@ -632,19 +631,17 @@ sample estimates:
        cor 
 -0.2124927 </code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cor.test</span>(df_all<span class="sc">$</span>SE_IAT, df_all<span class="sc">$</span>SE_NLT)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cor.test</span>(df_all<span class="sc">$</span>SE_IAT, df_all<span class="sc">$</span>SE_NLT, <span class="at">method =</span> <span class="st">"spearman"</span>)  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-    Pearson's product-moment correlation
+    Spearman's rank correlation rho
 
 data:  df_all$SE_IAT and df_all$SE_NLT
-t = -0.85787, df = 27, p-value = 0.3985
-alternative hypothesis: true correlation is not equal to 0
-95 percent confidence interval:
- -0.4995735  0.2165404
+S = 5118, p-value = 0.1716
+alternative hypothesis: true rho is not equal to 0
 sample estimates:
-      cor 
--0.162893 </code></pre>
+       rho 
+-0.2605911 </code></pre>
 </div>
 </div>
 <hr>
@@ -652,12 +649,12 @@ sample estimates:
 <section id="visualizzazione-esempio-correlazione-spe-se_iat" class="level2">
 <h2 class="anchored" data-anchor-id="visualizzazione-esempio-correlazione-spe-se_iat">Visualizzazione esempio: correlazione SPE ~ SE_IAT</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df_all, <span class="fu">aes</span>(<span class="at">x =</span> SPE, <span class="at">y =</span> SE_IAT)) <span class="sc">+</span></span>
-<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">color =</span> <span class="st">"#0072B2"</span>) <span class="sc">+</span></span>
-<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">color =</span> <span class="st">"red"</span>) <span class="sc">+</span></span>
-<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Correlazione SPE ~ SE_IAT"</span>, <span class="at">x =</span> <span class="st">"SPE"</span>, <span class="at">y =</span> <span class="st">"SE_IAT"</span>) <span class="sc">+</span></span>
-<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">14</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df_all, <span class="fu">aes</span>(<span class="at">x =</span> SPE, <span class="at">y =</span> SE_IAT)) <span class="sc">+</span></span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">color =</span> <span class="st">"#0072B2"</span>) <span class="sc">+</span></span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">color =</span> <span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Correlazione SPE ~ SE_IAT"</span>, <span class="at">x =</span> <span class="st">"SPE"</span>, <span class="at">y =</span> <span class="st">"SE_IAT"</span>) <span class="sc">+</span></span>
+<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">14</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>`geom_smooth()` using formula = 'y ~ x'</code></pre>
 </div>

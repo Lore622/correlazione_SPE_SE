@@ -9,7 +9,7 @@ In questa prima sezione verranno riportati i passaggi necessari per il calcolo d
 
 1. Data cleaning  
 2. Calcolo dei tempi di reazione  
-3. T-test  
+3. test statistici  
 4. Visualizzazione
 
 Nella pagina successiva verrà mostrato il procedimento per il calcolo dell’autostima implicita ed esplicita e le correlazioni con SPE. Infine, a pagina tre, si discuteranno brevemente gli esiti statistici.
@@ -85,7 +85,7 @@ kable(head(RT_mean_tot))
 ```{r}
 ## test per valutare la normalità
 shapiro.test(RT_mean_tot$media_RT_TU)
-shapiro.test(RT_mean_tot$media_RT_SC) #non normali
+shapiro.test(RT_mean_tot$media_RT_SC) 
 
 
 test_SPE <-wilcox.test(RT_mean_tot$media_RT_SC, RT_mean_tot$media_RT_TU, paired = TRUE)
