@@ -223,24 +223,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>result</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   SampleSize Power
-1          30 0.037
-2          31 0.043
-3          50 0.183
-4          70 0.405
-5          80 0.527
-6         100 0.704
-7         110 0.781
-8         120 0.853
-9         130 0.860
-10        140 0.906
-11        150 0.935
+1          30 0.038
+2          31 0.042
+3          50 0.179
+4          70 0.392
+5          80 0.548
+6         100 0.712
+7         110 0.779
+8         120 0.850
+9         130 0.892
+10        140 0.905
+11        150 0.922
 12        200 0.986</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calcola la potenza esatta per n = 31</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>exact_power_31 <span class="ot">&lt;-</span> result<span class="sc">$</span>Power[result<span class="sc">$</span>SampleSize <span class="sc">==</span> <span class="dv">31</span>]</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>exact_power_31</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] 0.043</code></pre>
+<pre><code>[1] 0.042</code></pre>
 </div>
 </div>
 <section id="grafico-della-curva-di-potenza" class="level3">
@@ -280,7 +280,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<p>Con una dimensione campionaria attuale di <strong>n = 31</strong>, la probabilità stimata di ottenere effetti statisticamente significativi per tutti e quattro i predittori è pari a <strong>4.3%</strong>, secondo le simulazioni Monte Carlo effettuate.</p>
+<p>Con una dimensione campionaria attuale di <strong>n = 31</strong>, la probabilità stimata di ottenere effetti statisticamente significativi per tutti e quattro i predittori è pari a <strong>4.2%</strong>, secondo le simulazioni Monte Carlo effettuate.</p>
 <p><a href="autostima.html">← Torna alla pagina precedente</a></p>
 
 
