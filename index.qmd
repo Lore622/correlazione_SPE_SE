@@ -1,0 +1,128 @@
+---
+title: "Studio correlazionala tra SPE ed SE"
+format: html
+---
+
+## Introduzione
+
+In questa prima sezione verranno riportati i passaggi necessari per il calcolo dell’SPE, in particolare:
+
+1. Data cleaning  
+2. Calcolo dei tempi di reazione  
+3. T-test  
+4. Visualizzazione
+
+Nella pagina successiva verrà mostrato il procedimento per il calcolo dell’autostima implicita ed esplicita e le correlazioni con SPE. Infine, a pagina tre, si discuteranno brevemente gli esiti statistici.
+
+## Caricamento dati e visualizzazione
+
+```{r}
+library(readxl)
+library(knitr) # per kable
+Matching_Task <- read_excel("Matching Task.xlsx")
+kable(head(Matching_Task))
+```  
+
+Per calcolare l'SPE bisonga selezionare solo le risposte corrette (acc=1) ed i trial matching escludendo quelli di pratica (trial_type=="exp").
+IMPORTANTE --> tenere conto del numero di condizione relativa al controbilanciamento.
+Quindi visto come sono organizzati i dati partirei dal creare un secondo df con solo  trial_type exp ed acc=1
+```{r}
+matching_df_corr_exp <-Matching_Task[Matching_Task$accuracy == 1 & Matching_Task$trial_type == "exp", ]
+kable(head(matching_df_corr_exp))
+```
+adesso si può aggiungere una nuova colonna chiamata: "tipo" che può assumere valore "matching" o "non_matching"
+matching--> se data condizione 1 shape==images/square.png label==TU
+e shape==images/triangle.png e label==SCONOSCIUTO
+per la condizione 2 i matching sono--> shape==images/triangle e label==TU
+oppure shape==images/square.png e label==SCONOSCIUTO
+```{r}
+matching_df_corr_exp$tipo<-"non_matching"
+matching_df_corr_exp$tipo[matching_df_corr_exp$condizione==1 & (
+(matching_df_corr_exp$shape=="images/square.png" &  matching_df_corr_exp$label=="TU")|
+(matching_df_corr_exp$shape=="images/triangle.png" &  matching_df_corr_exp$label=="SCONOSCIUTO")
+)]<-"matching"
+
+matching_df_corr_exp$tipo[matching_df_corr_exp$condizione==2 & (
+  (matching_df_corr_exp$shape=="images/triangle.png" &  matching_df_corr_exp$label=="TU")|
+    (matching_df_corr_exp$shape=="images/square.png" &  matching_df_corr_exp$label=="SCONOSCIUTO")
+)]<-"matching"
+#ora creiamo df con solo trial matching:
+df_matching<-matching_df_corr_exp[matching_df_corr_exp$tipo=="matching",]
+kable(head(df_matching))
+
+```
+
+```{r}
+#adesso eliminiamo RT<200ms 
+df_matching <- df_matching[df_matching$RT > 0.2, ]
+#calcoliamo upperlimit individuale: RT >2.5 sd rispetto alla media per singolo participant_id
+media_rt<-aggregate(RT ~ participant_id,data = df_matching, FUN = mean)
+sd_rt<-aggregate(RT ~ participant_id,data = df_matching, FUN = sd)
+stat_outliers=merge(media_rt, sd_rt, by = "participant_id")
+colnames(stat_outliers) <- c("participant_id", "media", "sd")
+stat_outliers$upper_limit<-stat_outliers$media+2.5*stat_outliers$sd
+# eliminiamo RT da df_matching
+df_matching_limited <- merge(df_matching, stat_outliers, by = "participant_id")
+df_clean_match <- df_matching_limited[df_matching_limited$RT <= df_matching_limited$upper_limit, ]
+View(df_clean_match)
+df_clean_match$upper_limit <- NULL
+```
+
+Adesso per ciascun partecipante calcoliamo mean RT matching TU e matching SCONOSCIUTO e poi calcoliamo l'SPE
+```{r}
+mean_rt_TU<-aggregate(RT ~ participant_id+tipo,data = df_clean_match[df_clean_match$label == "TU", ], FUN = mean)
+
+colnames(mean_rt_TU)<- c("participant_id", "tipo", "media_RT_TU")
+
+mean_rt_SC<-aggregate(RT ~ participant_id+tipo,data = df_clean_match[df_clean_match$label == "SCONOSCIUTO", ], FUN = mean)
+
+colnames(mean_rt_SC)<- c("participant_id", "tipo", "media_RT_SC")
+RT_mean_tot<-merge(mean_rt_TU,mean_rt_SC,by = "participant_id")
+
+RT_mean_tot$SPE<-RT_mean_tot$media_RT_SC-RT_mean_tot$media_RT_TU
+kable(head(RT_mean_tot))
+```
+```{r}
+## T-test per l'effetto SPE
+test_spe <- t.test(RT_mean_tot$media_RT_TU, RT_mean_tot$media_RT_SC, paired = TRUE)
+test_spe
+
+```
+```{r}
+## Visualizzazione della distribuzione dei tempi di reazione (SPE)
+
+library(ggplot2)
+
+ggplot(df_matching, aes(x = RT, fill = label)) +
+  geom_density(alpha = 0.4, color = "white", size = 0.3) +
+  labs(
+    title = "Distribuzione dei tempi di reazione per TU e SCONOSCIUTO (trial matching)",
+    x = "RT (s)",
+    y = "Densità"
+  ) +
+  scale_fill_manual(
+    values = c("TU" = "#00BFC4", "SCONOSCIUTO" = "#F8766D"),
+    breaks = c("TU", "SCONOSCIUTO"),
+    labels = c("TU", "SCONOSCIUTO"),
+    guide = guide_legend(title = NULL)
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "top",
+    legend.justification = "center",
+    legend.text = element_text(size = 12),
+    panel.grid = element_blank(), 
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 15),
+    axis.title = element_text(size = 13)
+  )
+saveRDS(RT_mean_tot, file = "RT_mean_tot.rds")
+```
+[→ Vai alla pagina successiva](autostima.html)
+
+
+
+
+
+
+
+  

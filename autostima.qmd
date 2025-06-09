@@ -1,0 +1,178 @@
+---
+title: "Calcolo Self-Esteem implicita ed esplicita"
+format: html
+---
+
+
+## Introduzione
+
+In questa sezione vengono descritte le procedure per il calcolo dei punteggi di **autostima implicita** (IAT, RRT e NLT) e **autostima esplicita** (RSES). Dopo la pulizia dei dati, calcoleremo le differenze tra blocchi critici nei task impliciti e il punteggio complessivo nella scala di Rosenberg. Infine, eseguiremo le correlazioni tra SPE e le misure di SE.
+
+---
+
+## Caricamento e separazione dei dati
+
+```{r}
+RT_mean_tot <- readRDS("RT_mean_tot.rds")
+library(readxl)
+library(knitr)
+IAT_RRT_NLT_RSES <- read_excel("IAT, RRT, NLT, RSES.xlsx")
+df_se <- IAT_RRT_NLT_RSES[IAT_RRT_NLT_RSES$trial_type == "exp", ]
+kable(head(df_se))
+
+df_IAT_RRT <- df_se[df_se$task %in% c("IAT", "RRT") & !is.na(df_se$RT), ]
+df_NLT_RSES <- df_se[df_se$task %in% c("NLT", "RSES"), ]
+```
+
+---
+
+## Pulizia dati: IAT e RRT
+
+```{r}
+df_IAT_RRT <- df_IAT_RRT[df_IAT_RRT$RT > 0.2, ]
+blocchi_IAT <- c("blocco3_exp", "blocco5_exp")
+blocchi_RRT <- c(
+  "EXP_blocco_6-7_RRT_lse",
+  "EXP_blocco3_4_RRT_hse",
+  "EXP_blocco3_4_hse_RRT_2",
+  "EXP_blocco_6-7_lse_RRT_2"
+)
+df_IAT_RRT_filtrato <- df_IAT_RRT[df_IAT_RRT$block %in% c(blocchi_IAT, blocchi_RRT), ]
+
+media_blocchi <- aggregate(RT ~ participant_id + block, data = df_IAT_RRT_filtrato, mean)
+sd_blocchi <- aggregate(RT ~ participant_id + block, data = df_IAT_RRT_filtrato, sd)
+media_sd_blocchi <- merge(media_blocchi, sd_blocchi, by = c("participant_id", "block"))
+colnames(media_sd_blocchi) <- c("participant_id", "block", "media", "sd")
+media_sd_blocchi$upper_limit <- media_sd_blocchi$media + 2.5 * media_sd_blocchi$sd
+
+media_sd_blocchi_small <- media_sd_blocchi[, c("participant_id", "block", "upper_limit")]
+df_IAT_RRT_filtrato <- merge(df_IAT_RRT_filtrato, media_sd_blocchi_small, by = c("participant_id", "block"))
+df_IAT_RRT_clean <- df_IAT_RRT_filtrato[df_IAT_RRT_filtrato$RT <= df_IAT_RRT_filtrato$upper_limit, ]
+df_IAT_RRT_clean <- df_IAT_RRT_clean[, !names(df_IAT_RRT_clean) %in% c("upper_limit", "score", "item", "letter")]
+kable(head(df_IAT_RRT_clean))
+```
+
+---
+
+## Calcolo dei punteggi SE impliciti ed espliciti
+
+```{r}
+df_SE_iat_rrt <- aggregate(RT ~ participant_id + block, data = df_IAT_RRT_clean, mean)
+df_SE_iat_rrt_wide <- reshape(df_SE_iat_rrt, timevar = "block", idvar = "participant_id", direction = "wide")
+colnames(df_SE_iat_rrt_wide) <- make.names(colnames(df_SE_iat_rrt_wide))
+df_SE_iat_rrt_wide$SE_IAT <- df_SE_iat_rrt_wide$RT.blocco3_exp - df_SE_iat_rrt_wide$RT.blocco5_exp
+df_SE_iat_rrt_wide$SE_RRT_2 <- df_SE_iat_rrt_wide$RT.EXP_blocco_6.7_lse_RRT_2 - df_SE_iat_rrt_wide$RT.EXP_blocco3_4_hse_RRT_2
+df_SE_iat_rrt_wide$SE_RRT <- df_SE_iat_rrt_wide$RT.EXP_blocco_6.7_RRT_lse - df_SE_iat_rrt_wide$RT.EXP_blocco3_4_RRT_hse
+
+# colonna unica
+
+df_SE_iat_rrt_wide$SE_RRT_merged <- ifelse(
+  is.na(df_SE_iat_rrt_wide$SE_RRT),
+  df_SE_iat_rrt_wide$SE_RRT_2,
+  df_SE_iat_rrt_wide$SE_RRT
+)
+
+# T-test su SE implicita
+
+t.test(df_SE_iat_rrt_wide$SE_IAT)
+t.test(df_SE_iat_rrt_wide$SE_RRT_merged)
+```
+
+---
+
+## Calcolo SE_NLT e RSES
+
+```{r}
+# Rimuoviamo colonne non rilevanti
+df_NLT_RSES <- df_NLT_RSES[, !names(df_NLT_RSES) %in% c("block", "accuracy", "RT")]
+partecipanti <- toupper(unique(df_NLT_RSES$participant_id))
+se_nlt <- numeric(length(partecipanti))
+
+for (i in seq_along(partecipanti)) {
+  pid <- partecipanti[i]
+  sub_df <- df_NLT_RSES[toupper(df_NLT_RSES$participant_id) == pid, ]
+  
+  iniziale_nome <- substr(pid, 1, 1)
+  iniziale_cognome <- substr(pid, 3, 3)
+  
+  lettere_presenti <- toupper(sub_df$letter)
+  score_nome <- sub_df$score[lettere_presenti == iniziale_nome]
+  score_cognome <- sub_df$score[lettere_presenti == iniziale_cognome]
+  lettere_da_escludere <- unique(c(iniziale_nome, iniziale_cognome))
+  media_altre <- mean(sub_df$score[!(lettere_presenti %in% lettere_da_escludere)], na.rm = TRUE)
+  
+  if (length(score_nome) > 0 && length(score_cognome) > 0 && !is.na(media_altre)) {
+    media_nome <- mean(score_nome, na.rm = TRUE)
+    media_cognome <- mean(score_cognome, na.rm = TRUE)
+    se_nlt[i] <- ((media_nome - media_altre) + (media_cognome - media_altre)) / 2
+  } else {
+    message(sprintf("⚠️ Valori mancanti per %s → nome: %s, cognome: %s", 
+                    pid, toString(score_nome), toString(score_cognome)))
+    se_nlt[i] <- NA
+  }
+}
+df_se_nlt <- data.frame(participant_id = partecipanti, SE_NLT = round(se_nlt, 2))
+t.test(df_se_nlt$SE_NLT)
+
+item_negativi <- c(
+  "Sono portato a pensare di essere un vero fallimento",
+  "Penso di non avere molto di cui essere fiero",
+  "Desidererei aver maggior rispetto di me stesso",
+  "Senza dubbio a volte mi sento inutile",
+  "A volte penso di essere un buono a nulla"
+)
+df_NLT_RSES$score_corretto <- ifelse(
+  df_NLT_RSES$item %in% item_negativi,
+  3 - df_NLT_RSES$score,
+  df_NLT_RSES$score
+)
+df_rses <- df_NLT_RSES[df_NLT_RSES$task == "RSES", ]
+df_rses_total <- aggregate(score_corretto ~ participant_id, data = df_rses, sum)
+colnames(df_rses_total) <- c("participant_id", "RSES_total")
+mean(df_rses_total$RSES_total)
+sd(df_rses_total$RSES_total)
+```
+
+---
+
+## Correlazioni tra SPE e misure di autostima
+
+```{r}
+df_all <- merge(RT_mean_tot[, c("participant_id", "SPE")], df_SE_iat_rrt_wide[, c("participant_id", "SE_IAT", "SE_RRT_merged")], by = "participant_id")
+df_all <- merge(df_all, df_se_nlt, by = "participant_id")
+df_all <- merge(df_all, df_rses_total, by = "participant_id")
+
+cor.test(df_all$SPE, df_all$SE_IAT)
+cor.test(df_all$SPE, df_all$SE_RRT_merged)
+cor.test(df_all$SPE, df_all$SE_NLT)
+cor.test(df_all$SPE, df_all$RSES_total)
+
+cor.test(df_all$RSES_total, df_all$SE_IAT)
+cor.test(df_all$RSES_total, df_all$SE_RRT_merged)
+cor.test(df_all$RSES_total, df_all$SE_NLT)
+
+cor.test(df_all$SE_RRT_merged, df_all$SE_IAT)
+cor.test(df_all$SE_NLT, df_all$SE_RRT_merged)
+cor.test(df_all$SE_IAT, df_all$SE_NLT)
+```
+
+---
+
+## Visualizzazione esempio: correlazione SPE ~ SE_IAT
+
+```{r}
+library(ggplot2)
+ggplot(df_all, aes(x = SPE, y = SE_IAT)) +
+  geom_point(color = "#0072B2") +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(title = "Correlazione SPE ~ SE_IAT", x = "SPE", y = "SE_IAT") +
+  theme_minimal(base_size = 14)
+```
+
+---
+
+## Navigazione
+
+[← Torna alla pagina precedente](index.html)  
+[→ Vai alla pagina successiva](considerazioni.html)
+

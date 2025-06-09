@@ -1,0 +1,20 @@
+project:
+  type: website
+  output-dir: docs
+
+website:
+  title: "Studio SPE e SE"
+  navbar:
+    left:
+      - text: "SPE"
+        file: index.qmd
+      - text: "Autostima"
+        file: autostima.qmd
+      - text: "Considerazioni"
+        file: considerazioni.qmd
+
+format:
+  html:
+    theme: cosmo
+    code-copy: true
+
