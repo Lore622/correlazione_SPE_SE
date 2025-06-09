@@ -83,9 +83,14 @@ RT_mean_tot$SPE<-RT_mean_tot$media_RT_SC-RT_mean_tot$media_RT_TU
 kable(head(RT_mean_tot))
 ```
 ```{r}
-## T-test per l'effetto SPE
-test_spe <- t.test(RT_mean_tot$media_RT_TU, RT_mean_tot$media_RT_SC, paired = TRUE)
-test_spe
+## test per valutare la normalità
+shapiro.test(RT_mean_tot$media_RT_TU)
+shapiro.test(RT_mean_tot$media_RT_SC) #non normali
+
+
+test_SPE <-wilcox.test(RT_mean_tot$media_RT_SC, RT_mean_tot$media_RT_TU, paired = TRUE)
+
+test_SPE
 
 ```
 ```{r}
